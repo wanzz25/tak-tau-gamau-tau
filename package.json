@@ -1,0 +1,9 @@
+{
+  "name": "mc-autobackup",
+  "version": "3.0.0",
+  "description": "Minecraft Auto Backup via Pterodactyl — Vercel Edition",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": { "node": "18.x" }
+}
