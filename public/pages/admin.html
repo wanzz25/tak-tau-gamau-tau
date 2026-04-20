@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — MC AutoBackup</title>
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+body{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sb-brand{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sb-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.sb-title{font-family:var(--display);font-size:13px;font-weight:800;line-height:1.2;}
+.sb-title span{color:var(--accent);}
+.sb-ver{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;}
+.nav-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:8px 8px 4px;}
+.nl{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);font-size:12px;color:var(--muted2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nl:hover{background:var(--border);color:var(--text);}
+.nl.active{background:var(--accent-dim);color:var(--accent);font-weight:600;}
+.nl .ic{font-size:13px;width:18px;text-align:center;}
+.sb-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.u-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.u-info{flex:1;min-width:0;}
+.u-name{font-size:12px;font-weight:600;}
+.u-role{font-size:10px;color:var(--muted2);}
+.btn-out{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px;transition:color .2s;}
+.btn-out:hover{color:var(--danger);}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+.topbar{padding:13px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(8,11,16,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
+.pg-title{font-family:var(--display);font-size:17px;font-weight:700;}
+.content{padding:22px;flex:1;}
+.ugrid{display:flex;flex-direction:column;gap:11px;}
+.uc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:17px 19px;display:flex;align-items:center;gap:13px;flex-wrap:wrap;animation:fadeUp .25s ease;}
+.ua{width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;}
+.ui{flex:1;min-width:0;}
+.un{font-size:14px;font-weight:700;}
+.um{font-size:11px;color:var(--muted2);margin-top:3px;}
+.uact{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;}
+/* Modal */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.mov.open{display:flex;animation:fadeUp .25s ease;}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:26px;width:100%;max-width:420px;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.modal h3{font-family:var(--display);font-size:16px;margin-bottom:5px;}
+.modal p{font-size:12px;color:var(--muted2);margin-bottom:20px;}
+.mfields{display:flex;flex-direction:column;gap:13px;margin-bottom:18px;}
+.mact{display:flex;gap:9px;justify-content:flex-end;}
+.empty{text-align:center;padding:36px;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body class="grid-bg">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">⛏️</div>
+    <div><div class="sb-title">MC<span>Backup</span></div><div class="sb-ver">VERCEL v3</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-lbl">Menu</div>
+    <button class="nl" onclick="go('dashboard.html')"><span class="ic">💾</span> Dashboard</button>
+    <button class="nl" onclick="go('apikeys.html')"><span class="ic">🔑</span> API Keys</button>
+    <div class="nav-lbl">Akun</div>
+    <button class="nl active"><span class="ic">👥</span> Kelola User</button>
+  </nav>
+  <div class="sb-user">
+    <div class="u-av" id="u-av"></div>
+    <div class="u-info"><div class="u-name" id="u-name">—</div><div class="u-role">🔑 Admin</div></div>
+    <button class="btn-out" onclick="doLogout()">⏻</button>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="pg-title">👥 Kelola User</div>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Tambah User</button>
+  </header>
+  <div class="content">
+    <div class="ugrid" id="ugrid"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+<!-- Modal -->
+<div class="mov" id="modal">
+  <div class="modal">
+    <h3 id="m-title">Tambah User</h3>
+    <p id="m-desc">User tersimpan di localStorage browser.</p>
+    <div class="mfields">
+      <div class="field"><label>Display Name</label><input type="text" id="m-display" placeholder="Nama tampilan"/></div>
+      <div class="field"><label>Username</label><input type="text" id="m-user" placeholder="huruf kecil, tanpa spasi"/></div>
+      <div class="field"><label id="m-pw-lbl">Password</label><input type="password" id="m-pass" placeholder="Min 6 karakter"/></div>
+      <div class="field"><label>Role</label><select id="m-role"><option value="user">👤 User</option><option value="admin">🔑 Admin</option></select></div>
+    </div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" id="m-btn" onclick="submitModal()">Buat User</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
+<script>
+const go=p=>location.href=p;
+let ME=Auth.requireAdmin('/pages/dashboard.html');
+if(!ME) throw '';
+{const av=document.getElementById('u-av');av.textContent=(ME.displayName||ME.username)[0].toUpperCase();av.style.background=avatarColor(av.textContent);document.getElementById('u-name').textContent=ME.displayName;}
+function doLogout(){Auth.logout();go('/index.html');}
+
+function renderUsers(){
+  const users=DB.getUsers();
+  const el=document.getElementById('ugrid');
+  if(!users.length){el.innerHTML='<div class="empty">Belum ada user.</div>';return;}
+  el.innerHTML=users.map(u=>{
+    const l=(u.displayName||u.username)[0].toUpperCase();
+    const isMe=u.id===ME.id;
+    return `<div class="uc">
+      <div class="ua" style="background:${avatarColor(l)};color:#000">${l}</div>
+      <div class="ui">
+        <div class="un">${esc(u.displayName||u.username)} ${isMe?'<span class="badge badge-blue" style="font-size:9px">KAMU</span>':''}</div>
+        <div class="um">@${esc(u.username)} · <span class="badge ${u.role==='admin'?'badge-green':'badge-blue'}">${u.role==='admin'?'🔑 Admin':'👤 User'}</span> · Login: ${fmtDate(u.lastLogin)}</div>
+      </div>
+      <div class="uact">
+        <button class="btn btn-ghost btn-sm" onclick="editUser(${u.id})">✏ Edit</button>
+        ${!isMe?`<button class="btn btn-danger btn-sm" onclick="delUser(${u.id},'${esc(u.username)}')">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let editId=null;
+function openModal(id=null){
+  editId=id;
+  document.getElementById('m-title').textContent=id?'Edit User':'Tambah User';
+  document.getElementById('m-desc').textContent=id?'Perubahan tersimpan di browser.':'User baru tersimpan di browser.';
+  document.getElementById('m-btn').textContent=id?'Simpan':'Buat User';
+  document.getElementById('m-pw-lbl').textContent=id?'Password Baru (kosongkan jika tidak ganti)':'Password';
+  document.getElementById('m-user').disabled=!!id;
+  if(!id){['m-display','m-user','m-pass'].forEach(i=>document.getElementById(i).value='');document.getElementById('m-role').value='user';}
+  document.getElementById('modal').classList.add('open');
+}
+function editUser(id){
+  const u=DB.getUsers().find(x=>x.id===id);if(!u)return;
+  openModal(id);
+  document.getElementById('m-display').value=u.displayName||'';
+  document.getElementById('m-user').value=u.username;
+  document.getElementById('m-pass').value='';
+  document.getElementById('m-role').value=u.role;
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');editId=null;}
+
+function submitModal(){
+  const display=document.getElementById('m-display').value.trim();
+  const username=document.getElementById('m-user').value.trim().toLowerCase();
+  const pass=document.getElementById('m-pass').value;
+  const role=document.getElementById('m-role').value;
+  if(!display){Toast.err('Display name wajib!');return;}
+  const btn=document.getElementById('m-btn'); btn.disabled=true;
+  try{
+    const users=DB.getUsers();
+    if(editId){
+      const idx=users.findIndex(u=>u.id===editId);if(idx===-1)return;
+      users[idx].displayName=display;users[idx].role=role;
+      if(pass){if(pass.length<6){Toast.err('Password min 6!');btn.disabled=false;return;}users[idx].password=pass;}
+      DB.saveUsers(users); Toast.ok('User diperbarui!');
+    } else {
+      if(!username){Toast.err('Username wajib!');btn.disabled=false;return;}
+      if(!/^[a-z0-9_]+$/.test(username)){Toast.err('Username: huruf kecil, angka, underscore!');btn.disabled=false;return;}
+      if(!pass||pass.length<6){Toast.err('Password min 6!');btn.disabled=false;return;}
+      if(users.find(u=>u.username===username)){Toast.err('Username sudah dipakai!');btn.disabled=false;return;}
+      const nextId=Math.max(0,...users.map(u=>u.id))+1;
+      users.push({id:nextId,username,password:pass,role,displayName:display,createdAt:new Date().toISOString(),lastLogin:null});
+      DB.saveUsers(users); Toast.ok(`User @${username} dibuat!`);
+    }
+    closeModal(); renderUsers();
+  } catch(e){Toast.err(e.message);}
+  btn.disabled=false;
+}
+
+function delUser(id,username){
+  if(!confirm(`Hapus @${username}?`))return;
+  const users=DB.getUsers().filter(u=>u.id!==id);
+  DB.saveUsers(users); Toast.warn(`@${username} dihapus`); renderUsers();
+}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+renderUsers();
+</script>
+</body>
+</html>
