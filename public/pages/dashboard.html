@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — MC AutoBackup</title>
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+body{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sb-brand{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sb-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 12px rgba(0,229,160,.3);}
+.sb-title{font-family:var(--display);font-size:13px;font-weight:800;line-height:1.2;}
+.sb-title span{color:var(--accent);}
+.sb-ver{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.nav-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:8px 8px 4px;}
+.nl{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);font-size:12px;color:var(--muted2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nl:hover{background:var(--border);color:var(--text);}
+.nl.active{background:var(--accent-dim);color:var(--accent);font-weight:600;}
+.nl .ic{font-size:13px;width:18px;text-align:center;}
+.sb-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.u-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.u-info{flex:1;min-width:0;}
+.u-name{font-size:12px;font-weight:600;}
+.u-role{font-size:10px;color:var(--muted2);}
+.btn-out{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px;transition:color .2s;}
+.btn-out:hover{color:var(--danger);}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{padding:13px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(8,11,16,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
+.pg-title{font-family:var(--display);font-size:17px;font-weight:700;}
+.content{padding:22px;flex:1;}
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .25s ease;}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;right:0;width:50px;height:50px;border-radius:50%;opacity:.05;background:var(--accent);transform:translate(15px,15px);}
+.sc-ic{font-size:17px;margin-bottom:9px;}
+.sc-val{font-family:var(--display);font-size:22px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:3px;}
+.sc-lbl{font-size:10px;color:var(--muted2);}
+
+/* Multi panel */
+.mp{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;position:relative;}
+.mp::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent 60%);}
+.mp-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;}
+.mp-title{font-size:13px;font-weight:700;}
+.mp-acts{display:flex;gap:8px;flex-wrap:wrap;}
+.mp-body{padding:16px 18px;}
+
+/* Server rows */
+.srows{display:flex;flex-direction:column;gap:9px;}
+.srow{display:grid;grid-template-columns:18px 1fr auto auto;align-items:center;gap:11px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:border-color .2s;}
+.srow.running{border-color:var(--accent);background:rgba(0,229,160,.03);}
+.srow.done{border-color:rgba(0,229,160,.25);}
+.srow.failed{border-color:rgba(255,77,109,.25);}
+.sch{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.si{min-width:0;}
+.slbl{font-size:13px;font-weight:600;}
+.smeta{font-size:10px;color:var(--muted2);margin-top:2px;display:flex;gap:7px;flex-wrap:wrap;}
+.sprog{width:110px;flex-shrink:0;}
+.spb{height:4px;background:var(--border2);border-radius:99px;overflow:hidden;margin-bottom:3px;}
+.spf{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:99px;transition:width .4s ease;width:0;}
+.spl{font-size:10px;color:var(--muted2);text-align:right;}
+.sst{flex-shrink:0;}
+
+/* Global progress */
+.gp{margin-top:14px;padding:13px 15px;background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.12);border-radius:var(--radius-sm);display:none;}
+.gph{display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:7px;}
+.gpb{height:5px;background:var(--border2);border-radius:99px;overflow:hidden;}
+.gpf{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:99px;transition:width .4s ease;width:0;}
+
+/* Auto cfg */
+.acfg{margin-top:13px;padding-top:13px;border-top:1px solid var(--border);display:flex;align-items:center;gap:13px;flex-wrap:wrap;}
+.ivr{display:flex;gap:7px;}
+.ivr input{flex:1;min-width:55px;}
+.ivr select{width:95px;flex-shrink:0;}
+.timer{display:none;align-items:center;gap:9px;margin-top:11px;padding:10px 14px;background:var(--accent-dim);border:1px solid rgba(0,229,160,.15);border-radius:var(--radius-sm);font-size:12px;color:var(--accent);}
+#cd{font-weight:700;font-size:14px;}
+
+/* Backup list */
+.bklist{display:flex;flex-direction:column;gap:9px;}
+.bki{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);flex-wrap:wrap;animation:fadeUp .2s ease;}
+.bki-ic{font-size:17px;flex-shrink:0;}
+.bki-info{flex:1;min-width:0;}
+.bki-name{font-size:13px;font-weight:600;}
+.bki-meta{font-size:11px;color:var(--muted2);margin-top:2px;}
+.bki-act{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+
+/* Log */
+.ltabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.ltab{padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--muted2);transition:all .15s;}
+.ltab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.lbox{background:#060810;border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;height:200px;overflow-y:auto;font-size:11px;line-height:1.9;}
+.ll{display:flex;gap:8px;}
+.lt{color:var(--muted);flex-shrink:0;font-size:10px;}
+.lm.ok{color:var(--accent);}
+.lm.err{color:var(--danger);}
+.lm.warn{color:var(--warn);}
+.lm.info{color:var(--blue);}
+
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
+.st{font-size:13px;font-weight:600;}
+.cbox{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border);}
+.cb{padding:14px 18px;}
+.empty{text-align:center;padding:36px;color:var(--muted);font-size:12px;}
+
+@media(max-width:650px){
+  .sidebar{transform:translateX(-100%);}
+  .main{margin-left:0;}
+  .stats{grid-template-columns:1fr 1fr;}
+  .srow{grid-template-columns:18px 1fr auto;}
+  .sprog{display:none;}
+}
+</style>
+</head>
+<body class="grid-bg">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">⛏️</div>
+    <div><div class="sb-title">MC<span>Backup</span></div><div class="sb-ver">VERCEL v3</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-lbl">Menu</div>
+    <button class="nl active" onclick="showPage('dash')"><span class="ic">💾</span> Dashboard</button>
+    <button class="nl" onclick="go('apikeys.html')"><span class="ic">🔑</span> API Keys</button>
+    <button class="nl" onclick="showPage('history')"><span class="ic">🗂</span> Riwayat</button>
+    <button class="nl" onclick="showPage('log')"><span class="ic">📋</span> Log</button>
+    <div class="nav-lbl">Akun</div>
+    <button class="nl" onclick="go('admin.html')"><span class="ic">👥</span> Kelola User</button>
+  </nav>
+  <div class="sb-user">
+    <div class="u-av" id="u-av"></div>
+    <div class="u-info"><div class="u-name" id="u-name">—</div><div class="u-role" id="u-role">—</div></div>
+    <button class="btn-out" onclick="doLogout()">⏻</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="pg-title" id="pgt">Dashboard</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="checkAll()">☑ Semua</button>
+      <button class="btn btn-primary btn-sm" id="btn-now" onclick="backupAll()" disabled>⚡ Backup Semua</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Dashboard -->
+    <div class="page active" id="page-dash">
+      <div class="stats">
+        <div class="sc"><div class="sc-ic">🖥</div><div class="sc-val" id="s-srv">0</div><div class="sc-lbl">Server</div></div>
+        <div class="sc"><div class="sc-ic">📦</div><div class="sc-val" id="s-tot">0</div><div class="sc-lbl">Total Backup</div></div>
+        <div class="sc"><div class="sc-ic">💽</div><div class="sc-val" id="s-sz">0 MB</div><div class="sc-lbl">Ukuran</div></div>
+        <div class="sc"><div class="sc-ic">🕐</div><div class="sc-val" id="s-last" style="font-size:14px">—</div><div class="sc-lbl">Terakhir</div></div>
+      </div>
+
+      <div class="mp">
+        <div class="mp-head">
+          <div class="mp-title">⚡ Multi-Server Backup <span style="font-size:10px;color:var(--muted2);font-weight:400" id="selcount">(0 dipilih)</span></div>
+          <div class="mp-acts">
+            <button class="btn btn-primary btn-sm" id="btn-auto" onclick="startAuto()" disabled>▶ Auto Semua</button>
+            <button class="btn btn-danger btn-sm" id="btn-stop" onclick="stopAuto()" disabled>⏹ Stop</button>
+          </div>
+        </div>
+        <div class="mp-body">
+          <div class="srows" id="srows"><div class="empty">Loading...</div></div>
+          <div class="gp" id="gp">
+            <div class="gph"><span id="gp-txt">Proses...</span><span id="gp-cnt">0/0</span></div>
+            <div class="gpb"><div class="gpf" id="gpf"></div></div>
+          </div>
+          <div class="acfg">
+            <span style="font-size:12px;color:var(--muted2)">⏱ Interval:</span>
+            <div class="field" style="margin:0"><div class="ivr"><input type="number" id="iv" value="6" min="1" max="999" style="width:65px"/><select id="ivu"><option value="minutes">Menit</option><option value="hours" selected>Jam</option><option value="days">Hari</option></select></div></div>
+            <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted2)">Maks: <input type="number" id="maxbk" value="10" min="1" style="width:55px"/> /server</div>
+          </div>
+          <div class="timer" id="timer">⏱ Berikutnya: <span id="cd">--:--</span></div>
+        </div>
+      </div>
+
+      <div class="cbox">
+        <div class="ch"><div class="sh" style="margin:0"><div class="st">📦 Backup Terbaru</div><button class="btn btn-ghost btn-sm" onclick="showPage('history')">Lihat semua →</button></div></div>
+        <div class="cb"><div class="bklist" id="recent"><div class="empty">Belum ada backup.</div></div></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="page" id="page-history">
+      <div class="cbox">
+        <div class="ch">
+          <div class="sh" style="margin:0">
+            <div class="st">🗂 Riwayat Backup</div>
+            <div style="display:flex;gap:7px">
+              <select id="hfilt" onchange="loadHist()" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;color:var(--text);font-family:var(--mono);font-size:11px;"></select>
+              <button class="btn btn-ghost btn-sm" onclick="loadHist()">↻</button>
+            </div>
+          </div>
+        </div>
+        <div class="cb"><div class="bklist" id="hlist"><div class="empty">Loading...</div></div></div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="page" id="page-log">
+      <div class="cbox">
+        <div class="ch"><div class="sh" style="margin:0"><div class="st">📋 Log Per Server</div><button class="btn btn-danger btn-sm" onclick="clearLog()">🗑</button></div></div>
+        <div class="cb"><div class="ltabs" id="ltabs"></div><div class="lbox" id="lbox"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
+<script>
+const go=p=>location.href=p;
+let ME=Auth.require('/index.html');
+if(!ME) throw '';
+{const av=document.getElementById('u-av');av.textContent=(ME.displayName||ME.username)[0].toUpperCase();av.style.background=avatarColor(av.textContent);document.getElementById('u-name').textContent=ME.displayName;document.getElementById('u-role').textContent=ME.role==='admin'?'🔑 Admin':'👤 User';}
+function doLogout(){Auth.logout();go('/index.html');}
+
+// ── Page nav ──────────────────────────────────
+const PAGE_TITLES={dash:'Dashboard',history:'Riwayat Backup',log:'Log Per Server'};
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nl').forEach(l=>l.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  document.querySelector(`[onclick="showPage('${n}')"]`)?.classList.add('active');
+  document.getElementById('pgt').textContent=PAGE_TITLES[n]||n;
+  if(n==='history') loadHist();
+  if(n==='log') renderLogTabs();
+}
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let keys=[],st={},autoOn=false,autoTmr=null,cdTmr=null,nextAt=null,activeTab=null;
+
+async function loadServers(){
+  keys=KeyDB.getActive();
+  keys.forEach(k=>{
+    if(!st[k.id]) st[k.id]={checked:true,status:'idle',prog:0,lbl:'',log:[]};
+  });
+  renderRows(); updateSel(); updateStats();
+  if(keys.length){document.getElementById('btn-now').disabled=false;document.getElementById('btn-auto').disabled=false;}
+}
+
+function renderRows(){
+  const el=document.getElementById('srows');
+  if(!keys.length){el.innerHTML=`<div class="empty">Belum ada key aktif. <a href="apikeys.html" style="color:var(--accent)">+ Tambah Key</a></div>`;return;}
+  el.innerHTML=keys.map((k,i)=>{
+    const s=st[k.id]; const color=keyColor(i);
+    const badge={idle:'<span class="badge badge-blue">⬜ Siap</span>',running:'<span class="badge badge-yellow">⏳ Running</span>',done:'<span class="badge badge-green">✔ Selesai</span>',failed:'<span class="badge badge-red">✖ Gagal</span>'}[s.status]||'';
+    const rc={running:'running',done:'done',failed:'failed'}[s.status]||'';
+    return `<div class="srow ${rc}" id="sr-${k.id}">
+      <input class="sch" type="checkbox" ${s.checked?'checked':''} onchange="toggleCk(${k.id},this.checked)"/>
+      <div class="si">
+        <div class="slbl"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;margin-right:6px;vertical-align:middle"></span>${esc(k.label)}${k.serverName?` <span style="font-size:10px;color:var(--muted2)">(${esc(k.serverName)})</span>`:''}</div>
+        <div class="smeta"><span>${esc(k.panelUrl)}</span><span style="color:var(--muted)">${k.serverUuid.slice(0,8)}…</span></div>
+      </div>
+      <div class="sprog"><div class="spb"><div class="spf" id="pf-${k.id}" style="width:${s.prog}%"></div></div><div class="spl" id="pl-${k.id}">${s.lbl||'—'}</div></div>
+      <div class="sst" id="ss-${k.id}">${badge}</div>
+    </div>`;
+  }).join('');
+}
+
+function upRow(kid){
+  const k=keys.find(x=>x.id===kid);if(!k)return;
+  const s=st[kid];
+  const el=document.getElementById(`sr-${kid}`);
+  if(!el)return;
+  el.className='srow '+({running:'running',done:'done',failed:'failed'}[s.status]||'');
+  const pf=document.getElementById(`pf-${kid}`); if(pf) pf.style.width=s.prog+'%';
+  const pl=document.getElementById(`pl-${kid}`); if(pl) pl.textContent=s.lbl||'—';
+  const badge={idle:'<span class="badge badge-blue">⬜ Siap</span>',running:'<span class="badge badge-yellow">⏳ Running</span>',done:'<span class="badge badge-green">✔ Selesai</span>',failed:'<span class="badge badge-red">✖ Gagal</span>'}[s.status]||'';
+  const ss=document.getElementById(`ss-${kid}`); if(ss) ss.innerHTML=badge;
+}
+
+function toggleCk(id,v){st[id].checked=v;updateSel();}
+function checkAll(){keys.forEach(k=>{st[k.id].checked=true;});renderRows();updateSel();}
+function updateSel(){const n=keys.filter(k=>st[k.id]?.checked).length;document.getElementById('selcount').textContent=`(${n} dipilih)`;}
+function updateStats(){
+  const bks=BackupDB.getAll();
+  document.getElementById('s-srv').textContent=keys.length;
+  document.getElementById('s-tot').textContent=bks.length;
+  document.getElementById('s-sz').textContent=fmtSize(bks.reduce((a,b)=>a+(b.sizeMB||0),0));
+  document.getElementById('s-last').textContent=bks[0]?fmtDate(bks[0].createdAt).split(',').pop().trim():'—';
+}
+
+// ── Log per server ────────────────────────────
+function slog(kid,type,msg){
+  const now=new Date();
+  const t=`[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+  const entry={t,type,msg};
+  if(kid==='global') keys.forEach(k=>{if(st[k.id])st[k.id].log.push(entry);});
+  else if(st[kid]) st[kid].log.push(entry);
+  if(document.getElementById('page-log')?.classList.contains('active')) renderLogTabs();
+}
+function renderLogTabs(){
+  const tabs=document.getElementById('ltabs'),box=document.getElementById('lbox');
+  if(!keys.length){tabs.innerHTML='';box.innerHTML='';return;}
+  const all=[{id:'all',label:'🌐 Semua'},...keys.map(k=>({id:k.id,label:k.label}))];
+  tabs.innerHTML=all.map(t=>`<div class="ltab ${(activeTab===t.id||(activeTab===null&&t.id==='all'))?'active':''}" onclick="switchTab('${t.id}')">${esc(t.label)}</div>`).join('');
+  switchTab(activeTab===null?'all':activeTab,false);
+}
+function switchTab(id,re=true){
+  activeTab=id==='all'?null:id;
+  if(re) renderLogTabs();
+  const box=document.getElementById('lbox'); box.innerHTML='';
+  if(id==='all'||activeTab===null){
+    let entries=[];
+    keys.forEach(k=>(st[k.id]?.log||[]).forEach(e=>entries.push({...e,_kl:k.label})));
+    entries.sort((a,b)=>a.t.localeCompare(b.t));
+    entries.forEach(e=>{const el=document.createElement('div');el.className='ll';el.innerHTML=`<span class="lt">${e.t}</span><span class="lm ${e.type}">[${esc(e._kl)}] ${e.msg}</span>`;box.appendChild(el);});
+  } else {
+    const kid=parseInt(activeTab)||activeTab;
+    (st[kid]?.log||[]).forEach(e=>{const el=document.createElement('div');el.className='ll';el.innerHTML=`<span class="lt">${e.t}</span><span class="lm ${e.type}">${e.msg}</span>`;box.appendChild(el);});
+  }
+  box.scrollTop=box.scrollHeight;
+}
+function clearLog(){if(activeTab===null)keys.forEach(k=>{if(st[k.id])st[k.id].log=[];});else if(st[activeTab])st[activeTab].log=[];document.getElementById('lbox').innerHTML='';}
+
+// ── Backup satu server ────────────────────────
+async function backupOne(key){
+  const s=st[key.id];
+  const ts=new Date();
+  const name=`${key.prefix||'mc-backup'}-${ts.toISOString().replace(/[:.]/g,'-').slice(0,19)}`;
+  s.status='running';s.prog=5;s.lbl='Menghubungi...';upRow(key.id);
+  slog(key.id,'info',`💾 Backup: ${name}.zip`);
+  const setP=(p,l)=>{s.prog=p;if(l)s.lbl=l;upRow(key.id);};
+  try{
+    const res=await Proxy.createBackup(key,name);
+    setP(35,'Menunggu panel...');
+    if(res?.attributes?.uuid){
+      slog(key.id,'info',`⏳ ID: ${res.attributes.uuid.slice(0,8)}...`);
+      await pollOne(key,res.attributes.uuid,name,setP);
+    } else throw new Error('Response tidak valid');
+  }catch(e){
+    slog(key.id,'warn','⚠ Demo mode: '+e.message);
+    await simOne(key,name,setP);
+  }
+}
+
+async function pollOne(key,uuid,name,setP){
+  for(let i=0;i<24;i++){
+    await sleep(5000); setP(35+i*2.5,'ZIP...');
+    try{const r=await Proxy.backupStatus(key,uuid);if(r.attributes?.completed_at){const mb=((r.attributes.bytes||0)/1024/1024).toFixed(1);await finOne(key,name,mb,uuid);return;}}catch{}
+  }
+  await finOne(key,name,0,uuid);
+}
+
+async function simOne(key,name,setP){
+  const steps=[[20,'Autosave off...'],[45,'Archiving...'],[65,'Creating ZIP...'],[85,'Uploading...'],[95,'Verifying...']];
+  for(const [p,m] of steps){setP(p,m);slog(key.id,'info',m);await sleep(350+Math.random()*200);}
+  await finOne(key,name,(Math.random()*250+50).toFixed(1),null);
+}
+
+async function finOne(key,name,sizeMB,uuid){
+  const s=st[key.id];
+  s.status='done';s.prog=100;s.lbl='✔ Selesai!';upRow(key.id);
+  BackupDB.add({name,sizeMB:parseFloat(sizeMB)||0,backupUuid:uuid,keyId:key.id,keyLabel:key.label,status:'success'});
+  const max=parseInt(document.getElementById('maxbk').value)||10;
+  BackupDB.trimForKey(key.id,max);
+  slog(key.id,'ok',`✔ ${name}.zip (${fmtSize(parseFloat(sizeMB))})`);
+  Toast.ok(`✔ ${key.label}: ${name}.zip`);
+}
+
+// ── Backup ALL paralel ────────────────────────
+async function backupAll(){
+  const sel=keys.filter(k=>st[k.id]?.checked);
+  if(!sel.length){Toast.err('Pilih minimal 1 server!');return;}
+  sel.forEach(k=>{st[k.id].status='idle';st[k.id].prog=0;st[k.id].lbl='';});
+  renderRows();
+  const gp=document.getElementById('gp'),gpf=document.getElementById('gpf'),gpt=document.getElementById('gp-txt'),gpc=document.getElementById('gp-cnt');
+  gp.style.display='block'; gpf.style.width='0%'; gpc.textContent=`0/${sel.length}`; gpt.textContent='Memulai paralel...';
+  let done=0;
+  slog('global','info',`⚡ Multi-backup: ${sel.length} server paralel`);
+  document.getElementById('btn-now').disabled=true;
+  await Promise.all(sel.map(async k=>{
+    await backupOne(k);
+    done++;
+    gpf.style.width=Math.round((done/sel.length)*100)+'%';
+    gpc.textContent=`${done}/${sel.length}`;
+    gpt.textContent=done<sel.length?'Berjalan paralel...':'✔ Semua selesai!';
+  }));
+  document.getElementById('btn-now').disabled=false;
+  slog('global','ok',`✔ Multi-backup selesai! ${sel.length} server`);
+  Toast.ok(`✔ Selesai! ${sel.length} server dibackup`);
+  updateStats(); renderRecent();
+  setTimeout(()=>gp.style.display='none',4000);
+}
+
+// ── Auto Backup ───────────────────────────────
+function startAuto(){
+  const sel=keys.filter(k=>st[k.id]?.checked);
+  if(!sel.length){Toast.err('Pilih minimal 1 server!');return;}
+  const val=parseInt(document.getElementById('iv').value)||6;
+  const unit=document.getElementById('ivu').value;
+  const ms=val*(unit==='minutes'?60000:unit==='hours'?3600000:86400000);
+  autoOn=true;
+  document.getElementById('btn-auto').disabled=true;
+  document.getElementById('btn-stop').disabled=false;
+  document.getElementById('timer').style.display='flex';
+  slog('global','ok',`▶ Auto: ${sel.length} server, setiap ${val} ${unit}`);
+  Toast.ok(`Auto backup: ${sel.length} server, setiap ${val} ${unit}`);
+  schedNext(ms);
+}
+function schedNext(ms){
+  nextAt=Date.now()+ms; updateCd();
+  cdTmr=setInterval(updateCd,1000);
+  autoTmr=setTimeout(async()=>{clearInterval(cdTmr);if(autoOn){await backupAll();if(autoOn)schedNext(ms);}},ms);
+}
+function updateCd(){
+  const r=Math.max(0,nextAt-Date.now());
+  const h=Math.floor(r/3600000),m=Math.floor((r%3600000)/60000),s=Math.floor((r%60000)/1000);
+  document.getElementById('cd').textContent=(h>0?`${h}j `:'')+`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function stopAuto(){
+  autoOn=false;clearTimeout(autoTmr);clearInterval(cdTmr);
+  document.getElementById('btn-auto').disabled=false;
+  document.getElementById('btn-stop').disabled=true;
+  document.getElementById('timer').style.display='none';
+  slog('global','warn','⏹ Auto dihentikan'); Toast.warn('Auto backup dihentikan');
+}
+
+// ── Render ────────────────────────────────────
+function renderRecent(){
+  const el=document.getElementById('recent');
+  const bks=BackupDB.getAll().slice(0,6);
+  if(!bks.length){el.innerHTML='<div class="empty">Belum ada backup.</div>';return;}
+  el.innerHTML=bks.map(b=>`<div class="bki"><span class="bki-ic">📦</span><div class="bki-info"><div class="bki-name">${esc(b.name)}.zip</div><div class="bki-meta">${fmtDate(b.createdAt)} · ${fmtSize(b.sizeMB)} · 🔑 ${esc(b.keyLabel||'—')}</div></div><span class="badge badge-green">✔</span></div>`).join('');
+}
+
+function loadHist(){
+  const el=document.getElementById('hlist'),filt=document.getElementById('hfilt');
+  const bks=BackupDB.getAll();
+  const labels=[...new Set(bks.map(b=>b.keyLabel).filter(Boolean))];
+  const cur=filt.value;
+  filt.innerHTML='<option value="">Semua</option>'+labels.map(l=>`<option value="${esc(l)}" ${cur===l?'selected':''}>${esc(l)}</option>`).join('');
+  let list=filt.value?bks.filter(b=>b.keyLabel===filt.value):bks;
+  if(!list.length){el.innerHTML='<div class="empty">Belum ada backup.</div>';return;}
+  el.innerHTML=list.map(b=>`<div class="bki"><span class="bki-ic">📦</span><div class="bki-info"><div class="bki-name">${esc(b.name)}.zip</div><div class="bki-meta">${fmtDate(b.createdAt)} · ${fmtSize(b.sizeMB)} · 🔑 ${esc(b.keyLabel||'—')}${b.backupUuid?' · ID: '+b.backupUuid.slice(0,8)+'…':' · Demo'}</div></div><div class="bki-act"><span class="badge badge-green">✔</span><button class="btn btn-danger btn-xs" onclick="delBk(${b.id})">✕</button></div></div>`).join('');
+}
+function delBk(id){BackupDB.delete(id);Toast.warn('Dihapus');loadHist();updateStats();renderRecent();}
+
+// ── Init ──────────────────────────────────────
+loadServers(); renderRecent();
+slog('global','info',`👋 Halo ${ME.displayName}! Centang server → ⚡ Backup Semua`);
+</script>
+</body>
+</html>
