@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MC AutoBackup — Login</title>
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
+.orb1{width:450px;height:450px;background:rgba(0,229,160,.055);top:-120px;left:-120px;animation:d1 14s ease-in-out infinite;}
+.orb2{width:320px;height:320px;background:rgba(96,165,250,.04);bottom:-80px;right:-80px;animation:d2 17s ease-in-out infinite;}
+@keyframes d1{0%,100%{transform:translate(0,0)}50%{transform:translate(50px,35px)}}
+@keyframes d2{0%,100%{transform:translate(0,0)}50%{transform:translate(-35px,-25px)}}
+.wrap{position:relative;z-index:1;width:100%;max-width:420px;padding:20px;animation:fadeUp .45s ease;}
+.brand{text-align:center;margin-bottom:32px;}
+.brand-icon{width:68px;height:68px;background:linear-gradient(135deg,#00b47a,#00e5a0);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px;box-shadow:0 0 48px rgba(0,229,160,.28),0 10px 40px rgba(0,0,0,.5);animation:glow 3s ease-in-out infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 48px rgba(0,229,160,.28),0 10px 40px rgba(0,0,0,.5)}50%{box-shadow:0 0 72px rgba(0,229,160,.5),0 10px 40px rgba(0,0,0,.5)}}
+.brand-title{font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:-.5px;}
+.brand-title span{color:var(--accent);}
+.brand-sub{font-size:11px;color:var(--muted2);margin-top:5px;letter-spacing:1px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.card h2{font-family:var(--display);font-size:18px;margin-bottom:6px;}
+.card>p{font-size:12px;color:var(--muted2);margin-bottom:24px;}
+.fields{display:flex;flex-direction:column;gap:14px;margin-bottom:20px;}
+.iw{position:relative;}
+.iw input{padding-left:40px;}
+.ii{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none;}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted2);font-size:14px;padding:2px;transition:color .2s;}
+.eye:hover{color:var(--accent);}
+.err{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--danger);display:none;margin-bottom:14px;}
+.btn-login{width:100%;justify-content:center;padding:14px;font-size:14px;}
+.footer{text-align:center;margin-top:18px;font-size:10px;color:var(--muted);letter-spacing:1px;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .4s ease;}
+</style>
+</head>
+<body class="grid-bg">
+<div class="orb orb1"></div><div class="orb orb2"></div>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-icon">⛏️</div>
+    <div class="brand-title">MC <span>AutoBackup</span></div>
+    <div class="brand-sub">PTERODACTYL · VERCEL EDITION v3</div>
+  </div>
+  <div class="card">
+    <h2>Selamat datang</h2>
+    <p>Masuk untuk mengelola backup server Minecraft kamu.</p>
+    <div class="err" id="err"></div>
+    <div class="fields">
+      <div class="field">
+        <label>Username</label>
+        <div class="iw"><span class="ii">👤</span><input type="text" id="user" placeholder="Username" autocomplete="username"/></div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="iw"><span class="ii">🔒</span><input type="password" id="pass" placeholder="Password" autocomplete="current-password"/><button class="eye" onclick="togglePw()">👁</button></div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-login" id="btn" onclick="doLogin()">Masuk ke Dashboard</button>
+  </div>
+  <div class="footer">DATA TERSIMPAN LOKAL · PROXY VIA VERCEL</div>
+</div>
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
+<script>
+if (Auth.me()) location.href = '/pages/dashboard.html';
+function togglePw(){ const i=document.getElementById('pass');const b=document.querySelector('.eye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'; }
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function doLogin(){
+  const u=document.getElementById('user').value.trim();
+  const p=document.getElementById('pass').value;
+  const err=document.getElementById('err');
+  const btn=document.getElementById('btn');
+  if(!u||!p){Toast.err('Isi semua field!');return;}
+  btn.disabled=true;btn.textContent='⏳ Verifikasi...';err.style.display='none';
+  setTimeout(()=>{
+    const s=Auth.login(u,p);
+    if(s){btn.textContent='✔ Berhasil!';Toast.ok('Halo, '+s.displayName+'!');setTimeout(()=>location.href='/pages/dashboard.html',600);}
+    else{err.style.display='block';err.textContent='✖ Username atau password salah';document.querySelector('.card').classList.add('shake');btn.disabled=false;btn.textContent='Masuk ke Dashboard';}
+  },300);
+}
+</script>
+</body>
+</html>
