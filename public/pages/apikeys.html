@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API Keys — MC AutoBackup</title>
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+body{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sb-brand{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sb-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 12px rgba(0,229,160,.3);}
+.sb-title{font-family:var(--display);font-size:13px;font-weight:800;line-height:1.2;}
+.sb-title span{color:var(--accent);}
+.sb-ver{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.nav-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:8px 8px 4px;}
+.nl{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);font-size:12px;color:var(--muted2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nl:hover{background:var(--border);color:var(--text);}
+.nl.active{background:var(--accent-dim);color:var(--accent);font-weight:600;}
+.nl .ic{font-size:13px;width:18px;text-align:center;}
+.sb-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.u-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.u-info{flex:1;min-width:0;}
+.u-name{font-size:12px;font-weight:600;}
+.u-role{font-size:10px;color:var(--muted2);}
+.btn-out{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px;transition:color .2s;}
+.btn-out:hover{color:var(--danger);}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(8,11,16,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
+.pg-title{font-family:var(--display);font-size:17px;font-weight:700;}
+.content{padding:24px;flex:1;}
+
+/* Add form */
+.add-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:22px;position:relative;overflow:hidden;}
+.add-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent 60%);}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:13px;font-weight:600;}
+.card-body{padding:20px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.ff{grid-column:1/-1;}
+.kw{position:relative;}
+.kw input{padding-right:36px;}
+.eye2{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted2);font-size:13px;padding:2px;transition:color .2s;}
+.eye2:hover{color:var(--accent);}
+
+/* Key cards */
+.keys{display:flex;flex-direction:column;gap:13px;}
+.kc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s;}
+.kc:hover{border-color:var(--border2);}
+.kc-top{display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid var(--border);}
+.knum{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;font-weight:800;flex-shrink:0;color:#000;}
+.kinfo{flex:1;min-width:0;}
+.klabel{font-size:13px;font-weight:700;margin-bottom:3px;}
+.kmeta{font-size:11px;color:var(--muted2);display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.ka{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.kc-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px;}
+.kv{display:flex;flex-direction:column;gap:3px;}
+.kvl{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+.kvv{font-size:11px;word-break:break-all;}
+.kvv.masked{color:var(--muted2);letter-spacing:2px;}
+/* toggle */
+.tog{position:relative;display:inline-block;width:34px;height:19px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.togs{position:absolute;inset:0;background:var(--border2);border-radius:99px;cursor:pointer;transition:.2s;}
+.togs::before{content:'';width:13px;height:13px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:.2s;}
+.tog input:checked+.togs{background:var(--accent);}
+.tog input:checked+.togs::before{left:18px;}
+/* edit row */
+.edit-row{display:none;padding:14px 16px;border-top:1px solid var(--border);background:rgba(0,229,160,.02);}
+.edit-row.open{display:block;}
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ef{grid-column:1/-1;}
+.ea{display:flex;gap:8px;}
+
+/* stat chips */
+.chips{display:flex;gap:13px;margin-bottom:20px;flex-wrap:wrap;}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px 16px;flex:1;min-width:100px;}
+.chip-val{font-family:var(--display);font-size:20px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:3px;}
+.chip-lbl{font-size:10px;color:var(--muted2);}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:12px;}
+
+/* pill status */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;text-transform:uppercase;}
+.pill-ok{background:rgba(0,229,160,.12);color:var(--accent);}
+.pill-err{background:rgba(255,77,109,.12);color:var(--danger);}
+.pill-none{background:rgba(255,255,255,.05);color:var(--muted2);}
+
+@media(max-width:650px){
+  .sidebar{transform:translateX(-100%);}
+  .main{margin-left:0;}
+  .fg,.kc-body,.eg{grid-template-columns:1fr;}
+  .ff,.ef{grid-column:1;}
+}
+</style>
+</head>
+<body class="grid-bg">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">⛏️</div>
+    <div><div class="sb-title">MC<span>Backup</span></div><div class="sb-ver">VERCEL v3</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-lbl">Menu</div>
+    <button class="nl" onclick="go('dashboard.html')"><span class="ic">💾</span> Dashboard</button>
+    <button class="nl active"><span class="ic">🔑</span> API Keys</button>
+    <div class="nav-lbl">Akun</div>
+    <button class="nl" onclick="go('admin.html')"><span class="ic">👥</span> Kelola User</button>
+  </nav>
+  <div class="sb-user">
+    <div class="u-av" id="u-av"></div>
+    <div class="u-info"><div class="u-name" id="u-name">—</div><div class="u-role" id="u-role">—</div></div>
+    <button class="btn-out" onclick="doLogout()">⏻</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="pg-title">🔑 API Keys Manager</div>
+    <span style="font-size:11px;color:var(--muted2)">Tersimpan di <code style="color:var(--accent)">localStorage</code></span>
+  </header>
+  <div class="content">
+    <!-- Stats -->
+    <div class="chips">
+      <div class="chip"><div class="chip-val" id="st-total">0</div><div class="chip-lbl">Total Keys</div></div>
+      <div class="chip"><div class="chip-val" id="st-active">0</div><div class="chip-lbl">Aktif</div></div>
+      <div class="chip"><div class="chip-val" id="st-ok">0</div><div class="chip-lbl">Test OK</div></div>
+    </div>
+
+    <!-- Add form -->
+    <div class="add-card">
+      <div class="card-head">
+        <div class="card-title">➕ Tambah API Key</div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleForm()" id="ftog">Sembunyikan ↑</button>
+      </div>
+      <div class="card-body" id="fform">
+        <div class="fg">
+          <div class="field"><label>Label / Nama Server</label><input type="text" id="f-label" placeholder="Contoh: SurvivalCraft, Skyblock"/></div>
+          <div class="field"><label>Panel URL</label><input type="text" id="f-url" placeholder="https://panel.example.com"/></div>
+          <div class="field ff"><label>API Key (ptlc_...)</label>
+            <div class="kw"><input type="password" id="f-key" placeholder="ptlc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"/><button class="eye2" onclick="toggleEye('f-key',this)">👁</button></div>
+          </div>
+          <div class="field"><label>Server UUID</label><input type="text" id="f-uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/></div>
+          <div class="field"><label>Prefix ZIP</label><input type="text" id="f-prefix" value="mc-backup"/></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="addKey()">💾 Simpan API Key</button>
+          <button class="btn btn-ghost" onclick="clearForm()">✕ Reset</button>
+          <span style="font-size:11px;color:var(--muted2)">Langsung tersimpan di browser</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600">📋 Daftar API Keys</div>
+      <button class="btn btn-ghost btn-sm" onclick="render()">↻</button>
+    </div>
+    <div class="keys" id="keys"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
+<script>
+const go = p => location.href = p;
+let ME = Auth.require('/index.html');
+if (!ME) throw '';
+{ const av=document.getElementById('u-av'); av.textContent=(ME.displayName||ME.username)[0].toUpperCase(); av.style.background=avatarColor(av.textContent); document.getElementById('u-name').textContent=ME.displayName; document.getElementById('u-role').textContent=ME.role==='admin'?'🔑 Admin':'👤 User'; }
+function doLogout(){ Auth.logout(); go('/index.html'); }
+
+let formOpen=true;
+function toggleForm(){ formOpen=!formOpen; document.getElementById('fform').style.display=formOpen?'block':'none'; document.getElementById('ftog').textContent=formOpen?'Sembunyikan ↑':'Tampilkan ↓'; }
+function toggleEye(id,btn){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; btn.textContent=i.type==='password'?'👁':'🙈'; }
+function clearForm(){ ['f-label','f-url','f-key','f-uuid'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-prefix').value='mc-backup'; }
+
+function addKey(){
+  const label=document.getElementById('f-label').value.trim();
+  const panelUrl=document.getElementById('f-url').value.trim().replace(/\/$/,'');
+  const apiKey=document.getElementById('f-key').value.trim();
+  const serverUuid=document.getElementById('f-uuid').value.trim();
+  const prefix=document.getElementById('f-prefix').value.trim()||'mc-backup';
+  if(!label) return Toast.err('Label wajib!');
+  if(!panelUrl) return Toast.err('Panel URL wajib!');
+  if(!apiKey) return Toast.err('API Key wajib!');
+  if(!serverUuid) return Toast.err('Server UUID wajib!');
+  KeyDB.add({label,panelUrl,apiKey,serverUuid,prefix});
+  Toast.ok(`✔ "${label}" tersimpan!`);
+  clearForm(); render();
+}
+
+function render(){
+  const keys=KeyDB.getAll();
+  const el=document.getElementById('keys');
+  document.getElementById('st-total').textContent=keys.length;
+  document.getElementById('st-active').textContent=keys.filter(k=>k.active).length;
+  document.getElementById('st-ok').textContent=keys.filter(k=>k.testStatus==='ok').length;
+
+  if(!keys.length){ el.innerHTML='<div class="empty">🔑 Belum ada key. Tambahkan di atas!</div>'; return; }
+
+  el.innerHTML=keys.map((k,i)=>{
+    const color=keyColor(i);
+    const pill=k.testStatus==='ok'
+      ?'<span class="pill pill-ok">✔ OK</span>'
+      :k.testStatus
+        ?`<span class="pill pill-err">✖ Error</span>`
+        :'<span class="pill pill-none">— Belum ditest</span>';
+    return `
+    <div class="kc" id="kc-${k.id}">
+      <div class="kc-top">
+        <div class="knum" style="background:${color}">${i+1}</div>
+        <div class="kinfo">
+          <div class="klabel">${esc(k.label)} ${k.serverName?`<span style="font-size:10px;color:var(--muted2)">(${esc(k.serverName)})</span>`:''}</div>
+          <div class="kmeta">${pill}${k.lastTest?`<span>Test: ${fmtDate(k.lastTest)}</span>`:''}</div>
+        </div>
+        <div class="ka">
+          <label class="tog"><input type="checkbox" ${k.active?'checked':''} onchange="toggleActive(${k.id},this.checked)"/><span class="togs"></span></label>
+          <button class="btn btn-ghost btn-sm" id="tbtn-${k.id}" onclick="testKey(${k.id})">🔌 Test</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleEdit(${k.id})">✏</button>
+          <button class="btn btn-danger btn-sm" onclick="delKey(${k.id},'${esc(k.label)}')">✕</button>
+        </div>
+      </div>
+      <div class="kc-body">
+        <div class="kv"><div class="kvl">Panel URL</div><div class="kvv">${esc(k.panelUrl)}</div></div>
+        <div class="kv"><div class="kvl">Server UUID</div><div class="kvv">${esc(k.serverUuid)}</div></div>
+        <div class="kv"><div class="kvl">API Key</div><div class="kvv masked">${KeyDB.maskKey(k.apiKey)}</div></div>
+        <div class="kv"><div class="kvl">Prefix ZIP</div><div class="kvv">${esc(k.prefix)}</div></div>
+      </div>
+      <div class="edit-row" id="edit-${k.id}">
+        <div class="eg">
+          <div class="field"><label>Label</label><input type="text" id="el-${k.id}" value="${esc(k.label)}"/></div>
+          <div class="field"><label>Prefix ZIP</label><input type="text" id="ep-${k.id}" value="${esc(k.prefix)}"/></div>
+          <div class="field ef"><label>Panel URL</label><input type="text" id="eu-${k.id}" value="${esc(k.panelUrl)}"/></div>
+          <div class="field ef"><label>Server UUID</label><input type="text" id="euu-${k.id}" value="${esc(k.serverUuid)}"/></div>
+          <div class="field ef"><label>API Key Baru (kosongkan jika tidak ganti)</label>
+            <div class="kw"><input type="password" id="ek-${k.id}" placeholder="ptlc_... (kosongkan jika tidak ganti)"/><button class="eye2" onclick="toggleEye('ek-${k.id}',this)">👁</button></div>
+          </div>
+        </div>
+        <div class="ea">
+          <button class="btn btn-primary btn-sm" onclick="saveEdit(${k.id})">💾 Simpan</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleEdit(${k.id})">Batal</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function testKey(id){
+  const btn=document.getElementById(`tbtn-${id}`);
+  btn.disabled=true; btn.textContent='⏳';
+  const key=KeyDB.getAll().find(k=>k.id===id);
+  if(!key){btn.disabled=false;btn.textContent='🔌 Test';return;}
+  try{
+    const data=await Proxy.test(key);
+    const name=data?.attributes?.name||key.serverUuid;
+    KeyDB.update(id,{testStatus:'ok',lastTest:new Date().toISOString(),serverName:name});
+    Toast.ok(`✔ "${name}" terhubung!`);
+  }catch(e){
+    KeyDB.update(id,{testStatus:'error',lastTest:new Date().toISOString()});
+    Toast.err('Gagal: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='🔌 Test';
+  render();
+}
+
+function toggleActive(id,val){ KeyDB.update(id,{active:val}); Toast.ok(val?'Aktif':'Nonaktif'); render(); }
+function toggleEdit(id){ document.getElementById(`edit-${id}`).classList.toggle('open'); }
+
+function saveEdit(id){
+  const label=document.getElementById(`el-${id}`).value.trim();
+  const prefix=document.getElementById(`ep-${id}`).value.trim()||'mc-backup';
+  const panelUrl=document.getElementById(`eu-${id}`).value.trim().replace(/\/$/,'');
+  const serverUuid=document.getElementById(`euu-${id}`).value.trim();
+  const apiKey=document.getElementById(`ek-${id}`).value.trim();
+  if(!label) return Toast.err('Label wajib!');
+  const upd={label,prefix,panelUrl,serverUuid};
+  if(apiKey && !apiKey.includes('•')) upd.apiKey=apiKey;
+  KeyDB.update(id,upd);
+  Toast.ok(`✔ "${label}" diperbarui!`); render();
+}
+
+function delKey(id,label){
+  if(!confirm(`Hapus "${label}"?`)) return;
+  KeyDB.delete(id); Toast.warn(`"${label}" dihapus`); render();
+}
+
+render();
+</script>
+</body>
+</html>
